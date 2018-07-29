@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#For now only customized for my device....
+
+case $1 in 
+	'connect')
+		adb connect 192.168.10.2:7091 #this will get configuration and connection settings later..
+		;;
+	'unlock')
+		if adb shell dumpsys power | grep mWakefulness=Asleep ; then
+		adb shell input keyevent KEYCODE_WAKEUP
+		adb shell input swipe 550 1650 550 800
+		adb shell input keyevent 14 7 11 7
+		fi
+		;;
+	'wake')
+		adb shell input keyevent KEYCODE_WAKEUP
+		;;
+	'sleep')
+		adb shell input keyevent KEYCODE_SLEEP
+		;;
+	'2cars')
+		if adb shell dumpsys power | grep mWakefulness=Asleep ; then
+		adb shell input keyevent KEYCODE_WAKEUP
+		adb shell input swipe 550 1650 550 800
+		adb shell input keyevent 14 7 11 7
+		adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1"
+		else
+		adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1"
+		fi
+		;;
+	'help')
+		echo "HELP by gabs" ;;
+esac
+
+
+
