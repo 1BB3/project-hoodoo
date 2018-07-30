@@ -1,35 +1,94 @@
 #!/bin/bash
 
-#For now only customized for my device....
+if [ -e $HOME/.conf.mido ] #check if the conf file exists
+then 
+	. $HOME/.conf.mido #source it if exists
+else
+	echo -e "adb_connection=\nip=\nport=\ndevice_pin=\nunlock_swipe_direction=" > $HOME/.conf.mido #if not then create conf with no value
+	. $HOME/.conf.mido
+fi
 
-case $1 in 
-	'connect')
-		adb connect 192.168.10.2:7091 #this will get configuration and connection settings later..
-		;;
-	'unlock')
-		if adb shell dumpsys power | grep mWakefulness=Asleep ; then
-		adb shell input keyevent KEYCODE_WAKEUP
-		adb shell input swipe 550 1650 550 800
-		adb shell input keyevent 14 7 11 7
+
+if [ $# != 0 ]
+then
+	case $1 in  #Check whether the conf files has value or not and skip this if the user intends to configure or see the config values. 
+	'config') #show config values..
+		while read v; do
+			echo $v
+		done < $HOME/.conf.mido
+	;;
+	'configure') #Write the values given by the user to the conf file.
+		for ((i = 2; i <= $#; i=i+2 )); do #Loop from the 2nd positional parameter to last skipping by 2 because there will be values in the middle.
+				case ${!i} in #Loop through the option of the configure
+					'-c'|'--adb-connection') #confirm whether connection is through tcp or usb.
+						i=$((i+1)) && sed -i "s/^\(adb_connection\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1)) #put user values by replacing, Sed rocks \m/..
+					;;
+					'-a'|'--ip') #ip address of the target device
+						i=$((i+1)) && sed -i "s/^\(ip\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1)) #put user values by replacing, Sed rocks \m/..
+					;;
+					'-p'|'--port') #adb port opened in the device
+						i=$((i+1)) && sed -i "s/^\(port\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1))
+					;; 
+					'-s'|'--device-pin') #android lock security pin 
+						i=$((i+1)) && sed -i "s/^\(device_pin\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1))
+					;;  
+					'-u'|'--unlock-swipe-direction') #android lock screen swipe to enter pin.
+						i=$((i+1)) && sed -i "s/^\(unlock_swipe_direction\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1))
+					;; 
+				esac
+		done
+	;;
+	*)					 
+		while read v; do #Loop the contend of the conf file
+			n=${v%%=*} #As we have sourced this, this line stores the name of the variable in $n variable. I kind of got the gist of this expression but need to study it in detail later.
+			if [ ! ${!n} ] #Check if the value of the conf variables is null
+			then
+				echo "Not Configured" #If it is null then exit with the error.
+				exit 1
+			fi
+		done < $HOME/.conf.mido
+	;;
+	esac
+else
+	echo "Help By Gabs"
+fi
+
+case $1 in #commands of our program
+	'connect') #connect to adb to tcp or usb as configured.
+		case $adb_connection in 
+			'tcp')
+				adb connect $ip:$port
+			;;
+			'usb')
+				adb devices #show the state whether it is device/unauthorized/not shown.
+							#Need to make our own output format..
+			;;
+		esac
+	;;
+	'unlock') #unlocks the device, need to add checks for pin pattern password and no security
+		if adb shell dumpsys power | grep mWakefulness=Asleep ; then #get sleeping or woke state
+			adb shell input keyevent KEYCODE_WAKEUP
+			adb shell input swipe 550 1650 550 800 #Need to add it from conf file
+			adb shell input keyevent 14 7 11 7     #Need to add from conf file.
 		fi
-		;;
-	'wake')
+	;;
+	'wake') #wake up device
 		adb shell input keyevent KEYCODE_WAKEUP
-		;;
-	'sleep')
+	;;
+	'sleep'|'lock') #sleep device
 		adb shell input keyevent KEYCODE_SLEEP
-		;;
-	'2cars')
+	;;
+	'2cars') #open 2 cars game right now, need to change it to open any apps
 		if adb shell dumpsys power | grep mWakefulness=Asleep ; then
-		adb shell input keyevent KEYCODE_WAKEUP
-		adb shell input swipe 550 1650 550 800
-		adb shell input keyevent 14 7 11 7
-		adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1"
+			adb shell input keyevent KEYCODE_WAKEUP
+			adb shell input swipe 550 1650 550 800
+			adb shell input keyevent 14 7 11 7
+			adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1" #using monkey command to open the main activity of the app 
 		else
-		adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1"
+			adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1"
 		fi
-		;;
-	'help')
+	;;
+	'help') #help page, not made anything helpful yet...
 		echo "HELP by gabs" ;;
 esac
 
