@@ -158,7 +158,7 @@ case $1 in #commands of our program
 					adb shell input swipe 550 1650 550 800 #Need to add it from conf file
 					adb shell input keyevent $(process_pin)
 					adb shell input keyevent KEYCODE_HOME
-					adb shell input keyevent 84
+					adb shell input keyevent 84 84
 					adb shell input text $( echo "${@:3}" | sed 's/ /\%s/g')
 					adb shell input keyevent 66
 				else # else just search
