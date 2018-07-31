@@ -1,5 +1,9 @@
 #!/bin/bash
 
+process_pin(){ #function to change pin to KEYCODES
+    echo $((${device_pin:0:1} + 7)) $((${device_pin:1:1} + 7)) $((${device_pin:2:1} + 7)) $((${device_pin:3:1} + 7)) 
+}
+
 if [ -e $HOME/.conf.mido ] #check if the conf file exists
 then 
 	. $HOME/.conf.mido #source it if exists
@@ -66,17 +70,29 @@ case $1 in #commands of our program
 		esac
 	;;
 	'unlock') #unlocks the device, need to add checks for pin pattern password and no security
-		if adb shell dumpsys power | grep mWakefulness=Asleep ; then #get sleeping or woke state
+		if adb shell dumpsys power | grep -q mWakefulness=Asleep ; then #get sleeping or wake state
 			adb shell input keyevent KEYCODE_WAKEUP
 			adb shell input swipe 550 1650 550 800 #Need to add it from conf file
-			adb shell input keyevent 14 7 11 7     #Need to add from conf file.
+			adb shell input keyevent $(process_pin)    #Need to add from conf file.
 		fi
 	;;
 	'wake') #wake up device
 		adb shell input keyevent KEYCODE_WAKEUP
 	;;
-	'sleep'|'lock') #sleep device
-		adb shell input keyevent KEYCODE_SLEEP
+	'sleep'|'lock') #sleep device only if devide awake
+	if adb shell dumpsys power | grep -q mWakefulness=Awake ; then
+		case $2 in 
+			'--close-all'|'-x') #option to clear the recent and sleep
+				adb shell input keyevent KEYCODE_HOME
+				adb shell input keyevent 82
+				adb shell input tap 560 1760
+				adb shell input keyevent KEYCODE_SLEEP
+			;;
+			*)
+				adb shell input keyevent KEYCODE_SLEEP
+			;;
+		esac
+	fi
 	;;
 	'2cars') #open 2 cars game right now, need to change it to open any apps
 		if adb shell dumpsys power | grep mWakefulness=Asleep ; then
@@ -87,6 +103,75 @@ case $1 in #commands of our program
 		else
 			adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1"
 		fi
+	;;
+	'recent') #opens recent apps
+		case $2 in 
+			'--clear'|'-x') #option to clear the recent
+				adb shell input keyevent 82
+				adb shell input tap 560 1760
+			;;
+			'--longpress'|'-lp') #Option for long pressing the menu button, but it does not work
+				adb shell input keyevent --longpress 82
+			;;
+			*)
+				adb shell input keyevent 82
+			;;
+		esac
+	;;
+	'home') #home button
+		adb shell input keyevent KEYCODE_HOME
+	;;
+	'back') #back button
+		adb shell input keyevent KEYCODE_BACK
+	;;
+	'vol+') #volume up, if number is provided as option then it will increse by that amount default is 1.
+		[[ $2 ]] && for((i=1;i<=$2;i++)); do adb shell input keyevent KEYCODE_VOLUME_UP; done ||  adb shell input keyevent KEYCODE_VOLUME_UP
+	;;
+	'vol-') # volume down..
+		[[ $2 ]] && for((i=1;i<=$2;i++)); do adb shell input keyevent KEYCODE_VOLUME_DOWN; done ||  adb shell input keyevent KEYCODE_VOLUME_DOWN
+	;;
+	'play') #play media, need to add music selection option 
+		if adb shell dumpsys media.player | grep -q "-- gain: GAIN -- flags:  -- loss: none -- uid: 10132 -- attr: AudioAttributes: usage=1 content=2 flags=0x0 tags= bundle=null" ; then
+			echo Already playing. #check if something is alreafy playing
+		else
+			adb shell input keyevent 85
+		fi
+	;;
+	'pause') #pause media
+		if adb shell dumpsys media.player | grep -q "left - right volume(1.000000, 1.000000)" ; then
+			adb shell input keyevent 85 #check if nothing is playing
+		else
+			echo No media playing.
+		fi
+	;;
+	'next') #next track
+	adb shell input keyevent 87
+	;;
+	'previous'|'prev') #previous track
+	adb shell input keyevent 88
+	;;
+	'search') #search command
+		case $2 in
+			'-g'|'--google') #search by google
+				if adb shell dumpsys power | grep -q mWakefulness=Asleep ; then #get sleeping or wake state, if asleep then unlock first
+					adb shell input keyevent KEYCODE_WAKEUP 
+					adb shell input swipe 550 1650 550 800 #Need to add it from conf file
+					adb shell input keyevent $(process_pin)
+					adb shell input keyevent KEYCODE_HOME
+					adb shell input keyevent 84
+					adb shell input text $( echo "${@:3}" | sed 's/ /\%s/g')
+					adb shell input keyevent 66
+				else # else just search
+					adb shell input keyevent KEYCODE_HOME 
+					adb shell input keyevent 84
+					adb shell input text $( echo "${@:3}" | sed 's/ /\%s/g')
+					adb shell input keyevent 66
+				fi	 
+			;;
+			*) #need to add other searching option
+				echo "Help by gabs"
+			;; 
+		esac
 	;;
 	'help') #help page, not made anything helpful yet...
 		echo "HELP by gabs" ;;
