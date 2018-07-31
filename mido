@@ -131,7 +131,7 @@ case $1 in #commands of our program
 		[[ $2 ]] && for((i=1;i<=$2;i++)); do adb shell input keyevent KEYCODE_VOLUME_DOWN; done ||  adb shell input keyevent KEYCODE_VOLUME_DOWN
 	;;
 	'play') #play media, need to add music selection option 
-		if adb shell dumpsys media.player | grep -q "-- gain: GAIN -- flags:  -- loss: none -- uid: 10132 -- attr: AudioAttributes: usage=1 content=2 flags=0x0 tags= bundle=null" ; then
+		if adb shell dumpsys media.player | grep -q "left - right volume(1.000000, 1.000000)" ; then
 			echo Already playing. #check if something is alreafy playing
 		else
 			adb shell input keyevent 85
