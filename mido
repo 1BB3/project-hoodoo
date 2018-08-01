@@ -185,6 +185,8 @@ case $1 in #commands of our program
 			;; 
 		esac
 	;;
+	'config')
+	;;
 	*) #help page, not made anything helpful yet...
 		cat $HOME/.mido/help && echo 
 	;;
