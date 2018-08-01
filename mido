@@ -4,12 +4,33 @@ process_pin(){ #function to change pin to KEYCODES
     echo $((${device_pin:0:1} + 7)) $((${device_pin:1:1} + 7)) $((${device_pin:2:1} + 7)) $((${device_pin:3:1} + 7)) 
 }
 
-if [ -e $HOME/.conf.mido ] #check if the conf file exists
+unlock(){ #made a function to nlock the android as this is used multiple times
+	if adb shell dumpsys power | grep -q mWakefulness=Asleep ; then #get sleeping or wake state
+			adb shell input keyevent KEYCODE_WAKEUP
+			adb shell input swipe 550 1650 550 800 #Need to add it from conf file
+			adb shell input keyevent $(process_pin)    #Need to add from conf file.
+	fi
+}
+
+google-search(){
+	adb shell input keyevent KEYCODE_HOME
+	adb shell input keyevent 84 84
+	adb shell input text $( echo "${@:3}" | sed 's/ /\%s/g')
+	adb shell input keyevent 66
+}					
+
+if [ -d $HOME/.mido ] #check if the .mido directory exists
 then 
-	. $HOME/.conf.mido #source it if exists
-else
-	echo -e "adb_connection=\nip=\nport=\ndevice_pin=\nunlock_swipe_direction=" > $HOME/.conf.mido #if not then create conf with no value
-	. $HOME/.conf.mido
+	if [ -e $HOME/.mido/mido.conf ]; then #check if conf file exists
+		. $HOME/.mido/mido.conf #source it if exists
+	else
+	echo -e "adb_connection=\nip=\nport=\ndevice_pin=\nunlock_swipe_direction=" > $HOME/.mido/mido.conf #if not then create conf with no value
+	. $HOME/.mido/mido.conf	
+	fi
+else #else make directory and the conf file
+	mkdir $HOME/.mido
+	echo -e "adb_connection=\nip=\nport=\ndevice_pin=\nunlock_swipe_direction=" > $HOME/.mido/mido.conf #if not then create conf with no value
+	. $HOME/.mido/mido.conf
 fi
 
 
@@ -19,25 +40,25 @@ then
 	'config') #show config values..
 		while read v; do
 			echo $v
-		done < $HOME/.conf.mido
+		done < $HOME/.mido/mido.conf
 	;;
 	'configure') #Write the values given by the user to the conf file.
 		for ((i = 2; i <= $#; i=i+2 )); do #Loop from the 2nd positional parameter to last skipping by 2 because there will be values in the middle.
 				case ${!i} in #Loop through the option of the configure
 					'-c'|'--adb-connection') #confirm whether connection is through tcp or usb.
-						i=$((i+1)) && sed -i "s/^\(adb_connection\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1)) #put user values by replacing, Sed rocks \m/..
+						i=$((i+1)) && sed -i "s/^\(adb_connection\s*=\s*\).*$/\1${!i}/" $HOME/.mido/mido.conf && i=$((i-1)) #put user values by replacing, Sed rocks \m/..
 					;;
 					'-a'|'--ip') #ip address of the target device
-						i=$((i+1)) && sed -i "s/^\(ip\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1)) #put user values by replacing, Sed rocks \m/..
+						i=$((i+1)) && sed -i "s/^\(ip\s*=\s*\).*$/\1${!i}/" $HOME/.mido/mido.conf && i=$((i-1)) #put user values by replacing, Sed rocks \m/..
 					;;
 					'-p'|'--port') #adb port opened in the device
-						i=$((i+1)) && sed -i "s/^\(port\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1))
+						i=$((i+1)) && sed -i "s/^\(port\s*=\s*\).*$/\1${!i}/" $HOME/.mido/mido.conf && i=$((i-1))
 					;; 
 					'-s'|'--device-pin') #android lock security pin 
-						i=$((i+1)) && sed -i "s/^\(device_pin\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1))
+						i=$((i+1)) && sed -i "s/^\(device_pin\s*=\s*\).*$/\1${!i}/" $HOME/.mido/mido.conf && i=$((i-1))
 					;;  
 					'-u'|'--unlock-swipe-direction') #android lock screen swipe to enter pin.
-						i=$((i+1)) && sed -i "s/^\(unlock_swipe_direction\s*=\s*\).*$/\1${!i}/" $HOME/.conf.mido && i=$((i-1))
+						i=$((i+1)) && sed -i "s/^\(unlock_swipe_direction\s*=\s*\).*$/\1${!i}/" $HOME/.mido/mido.conf && i=$((i-1))
 					;; 
 				esac
 		done
@@ -50,7 +71,7 @@ then
 				echo "Not Configured" #If it is null then exit with the error.
 				exit 1
 			fi
-		done < $HOME/.conf.mido
+		done < $HOME/.mido/mido.conf
 	;;
 	esac
 else
@@ -69,11 +90,12 @@ case $1 in #commands of our program
 			;;
 		esac
 	;;
+	'disconnect')
+		adb disconnect
+	;;
 	'unlock') #unlocks the device, need to add checks for pin pattern password and no security
 		if adb shell dumpsys power | grep -q mWakefulness=Asleep ; then #get sleeping or wake state
-			adb shell input keyevent KEYCODE_WAKEUP
-			adb shell input swipe 550 1650 550 800 #Need to add it from conf file
-			adb shell input keyevent $(process_pin)    #Need to add from conf file.
+			unlock
 		fi
 	;;
 	'wake') #wake up device
@@ -95,10 +117,8 @@ case $1 in #commands of our program
 	fi
 	;;
 	'2cars') #open 2 cars game right now, need to change it to open any apps
-		if adb shell dumpsys power | grep mWakefulness=Asleep ; then
-			adb shell input keyevent KEYCODE_WAKEUP
-			adb shell input swipe 550 1650 550 800
-			adb shell input keyevent 14 7 11 7
+		if adb shell dumpsys power | grep -q mWakefulness=Asleep ; then
+			unlock
 			adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1" #using monkey command to open the main activity of the app 
 		else
 			adb shell "monkey -p com.ketchapp.twocars -c android.intent.category.LAUNCHER 1"
@@ -154,18 +174,10 @@ case $1 in #commands of our program
 		case $2 in
 			'-g'|'--google') #search by google
 				if adb shell dumpsys power | grep -q mWakefulness=Asleep ; then #get sleeping or wake state, if asleep then unlock first
-					adb shell input keyevent KEYCODE_WAKEUP 
-					adb shell input swipe 550 1650 550 800 #Need to add it from conf file
-					adb shell input keyevent $(process_pin)
-					adb shell input keyevent KEYCODE_HOME
-					adb shell input keyevent 84 84
-					adb shell input text $( echo "${@:3}" | sed 's/ /\%s/g')
-					adb shell input keyevent 66
+					unlock
+					google-search
 				else # else just search
-					adb shell input keyevent KEYCODE_HOME 
-					adb shell input keyevent 84
-					adb shell input text $( echo "${@:3}" | sed 's/ /\%s/g')
-					adb shell input keyevent 66
+					google-search
 				fi	 
 			;;
 			*) #need to add other searching option
