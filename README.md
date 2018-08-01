@@ -1,5 +1,6 @@
 # project-hoodoo
 Control your Android from Linux...
+_Only tested in Xiaomi Redminote4 (mido) (MIUI 10)_
 
 ## Instructions
 1. Enable ADB debugging in your android, and connect it to your linux and authorize it.
