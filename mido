@@ -75,7 +75,7 @@ then
 	;;
 	esac
 else
-	echo "Help By Gabs"
+	cat $HOME/.mido/help && echo
 fi
 
 case $1 in #commands of our program
@@ -181,12 +181,13 @@ case $1 in #commands of our program
 				fi	 
 			;;
 			*) #need to add other searching option
-				echo "Help by gabs"
+				cat $HOME/.mido/help && echo
 			;; 
 		esac
 	;;
-	'help') #help page, not made anything helpful yet...
-		echo "HELP by gabs" ;;
+	*) #help page, not made anything helpful yet...
+		cat $HOME/.mido/help && echo 
+	;;
 esac
 
 

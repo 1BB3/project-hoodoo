@@ -19,16 +19,13 @@ Control your Android from Linux...
        $ start adbd
     ```
     _When connecting later don't forget to authorize your linux._
-3. After setting up your android, to control it run the `mido` script. 
+3. After setting up your android, to install mido run the `install.sh` script. 
     
     You can run it from the current directory.
     ```
-    $ ./mido
+    $ ./install.sh
     ```
-    Or you can copy to `/bin` folder to make it global command.
-    ```
-    $ sudo cp mido /bin/
-    ```
+    
 ## Commands
 1. configure
     
@@ -68,3 +65,4 @@ Control your Android from Linux...
     --google
 
 _...More to come..._
+

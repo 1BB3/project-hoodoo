@@ -1,0 +1,38 @@
+
+Mido Commands --option
+1. configure
+    
+    --ip XXX.XXX.XXX.XXX
+    
+    --port XXXX
+    
+    --adb-connection \[tcp/usb\]
+    
+    --device-pin XXXX
+    
+    --unlock-swipe-direction \[up/down/left/right\]
+    
+2. config
+3. connect
+4. wake
+5. sleep / lock
+
+    --close-all
+    
+6. unlock
+7. 2cars
+8. recent
+
+    --clear
+    
+9. home
+10. back
+11. vol+ \[2,3,4...\]
+12. vol- \[2,3,4...\]
+13. play
+14. pause
+15. next
+16. previous / prev
+17. search
+
+    --google
