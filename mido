@@ -15,7 +15,7 @@ unlock(){ #made a function to nlock the android as this is used multiple times
 google-search(){
 	adb shell input keyevent KEYCODE_HOME
 	adb shell input keyevent 84 84
-	adb shell input text $( echo "${@:3}" | sed 's/ /\%s/g')
+	adb shell input keyboard text $( echo "${@:1}" | sed 's/ /\%s/g' )
 	adb shell input keyevent 66
 }					
 
@@ -175,9 +175,9 @@ case $1 in #commands of our program
 			'-g'|'--google') #search by google
 				if adb shell dumpsys power | grep -q mWakefulness=Asleep ; then #get sleeping or wake state, if asleep then unlock first
 					unlock
-					google-search
+					google-search ${@:3}
 				else # else just search
-					google-search
+					google-search ${@:3}
 				fi	 
 			;;
 			*) #need to add other searching option
@@ -185,7 +185,7 @@ case $1 in #commands of our program
 			;; 
 		esac
 	;;
-	'config')
+	'config'|'configure')
 	;;
 	*) #help page, not made anything helpful yet...
 		cat $HOME/.mido/help && echo 
